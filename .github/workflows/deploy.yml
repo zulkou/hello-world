@@ -1,0 +1,61 @@
+name: Deploy
+on:
+  push:
+    branches: [dev, main]
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  slug:
+    runs-on: ubuntu-latest
+    outputs:
+      app: ${{ steps.slug.outputs.app }}
+    steps:
+      - id: slug
+        run: |
+          SLUG=$(echo "${{ github.event.repository.name }}" \
+            | tr '[:upper:]' '[:lower:]' \
+            | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//')
+          echo "app=${SLUG}" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: slug
+    if: github.ref_name == 'dev'
+    uses: zulkou/devoplats-github/.github/workflows/build.yml@main
+    with:
+      app: ${{ needs.slug.outputs.app }}
+      dockerfile: Dockerfile
+
+  deploy-dev:
+    needs: build
+    if: github.ref_name == 'dev'
+    uses: zulkou/devoplats-github/.github/workflows/deploy-dev.yml@main
+    with:
+      image_tag: ${{ github.sha }}
+
+  promote:
+    if: github.ref_name == 'main'
+    runs-on: self-hosted
+    steps:
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - run: |
+          OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          SLUG=$(echo "${{ github.event.repository.name }}" \
+            | tr '[:upper:]' '[:lower:]' \
+            | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//')
+          docker pull ghcr.io/${OWNER}/${SLUG}:dev
+          docker tag ghcr.io/${OWNER}/${SLUG}:dev ghcr.io/${OWNER}/${SLUG}:prod
+          docker push ghcr.io/${OWNER}/${SLUG}:prod
+
+      - run: |
+          /opt/devoplats/platform/deploy \
+            --app "${{ github.event.repository.name }}" \
+            --tag prod \
+            --env prod
