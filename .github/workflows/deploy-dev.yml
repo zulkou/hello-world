@@ -37,7 +37,7 @@ jobs:
 
       - name: Deploy
         run: |
-          /opt/devoplats/platform/deploy \
+          /opt/devoplats/bin/devops deploy \
             --app "${{ github.event.repository.name }}" \
             --tag "${{ inputs.image_tag }}" \
             --env dev
