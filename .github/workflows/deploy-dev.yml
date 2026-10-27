@@ -32,12 +32,12 @@ jobs:
 
       - name: Sync files
         run: |
-          mkdir -p /opt/apps/${{ github.event.repository.name }}
-          cp compose.yml /opt/apps/${{ github.event.repository.name }}/compose.yml
+          mkdir -p /home/zulkou/apps/${{ github.event.repository.name }}
+          cp compose.yml /home/zulkou/apps/${{ github.event.repository.name }}/compose.yml
 
       - name: Deploy
         run: |
-          /opt/devoplats/bin/devops deploy \
+          /home/zulkou/Projects/devoplats/bin/devops deploy \
             --app "${{ github.event.repository.name }}" \
             --tag "${{ inputs.image_tag }}" \
             --env dev

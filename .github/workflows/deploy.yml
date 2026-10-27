@@ -67,7 +67,7 @@ jobs:
           docker push ghcr.io/${OWNER}/${SLUG}:prod
 
       - run: |
-          /opt/devoplats/bin/devops deploy \
+          /home/zulkou/Projects/devoplats/bin/devops deploy \
             --app "${{ github.event.repository.name }}" \
             --tag prod \
             --env prod
